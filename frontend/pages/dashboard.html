@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard - SMS</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="/assets/css/style.css">
+
+<!-- Helpers -->
+<script src="/utils/helpers.js"></script>
+
+<!-- Dashboard JS -->
+<script src="/assets/js/dashboard.js" defer></script>
+
+<style>
+
+body{
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* smooth cards */
+.card-hover{
+  transition: all .3s ease;
+}
+
+.card-hover:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* activity scroll */
+.activity-scroll{
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* chart height */
+.chart-box{
+  height: 380px;
+}
+
+</style>
+
+</head>
+
+<body class="bg-gray-100">
+
+<!-- AUTH CHECK -->
+<script>
+if (!localStorage.getItem('token')) {
+  window.location.href = "login.html";
+}
+</script>
+
+<!-- SIDEBAR -->
+<div id="sidebar"></div>
+
+<!-- MAIN -->
+<div class="ml-64 min-h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <!-- PAGE -->
+  <main class="p-6 md:p-8 flex-1">
+
+    <!-- HEADER -->
+    
+
+
+    <!-- STATS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+
+      <!-- STUDENTS -->
+      <div class="bg-white rounded-3xl p-6 shadow card-hover">
+
+        <div class="flex justify-between items-center">
+
+          <div>
+            <p class="text-gray-500 text-sm">
+              Total Students
+            </p>
+
+            <h2 id="totalStudents"
+                class="text-4xl font-bold mt-2 text-gray-800">
+              0
+            </h2>
+          </div>
+
+          <div class="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center">
+            <i class="fa-solid fa-users text-green-600 text-xl"></i>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ATTENDANCE -->
+      <div class="bg-white rounded-3xl p-6 shadow card-hover">
+
+        <div class="flex justify-between items-center">
+
+          <div>
+            <p class="text-gray-500 text-sm">
+              Avg Attendance
+            </p>
+
+            <h2 id="avgAttendance"
+                class="text-4xl font-bold mt-2 text-gray-800">
+              0%
+            </h2>
+          </div>
+
+          <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+            <i class="fa-solid fa-chart-line text-blue-600 text-xl"></i>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- COURSES -->
+      <div class="bg-white rounded-3xl p-6 shadow card-hover">
+
+        <div class="flex justify-between items-center">
+
+          <div>
+            <p class="text-gray-500 text-sm">
+              Active Courses
+            </p>
+
+            <h2 id="totalCourses"
+                class="text-4xl font-bold mt-2 text-gray-800">
+              0
+            </h2>
+          </div>
+
+          <div class="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center">
+            <i class="fa-solid fa-book-open text-purple-600 text-xl"></i>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- CHART --> 
+     <div class="bg-white p-6 rounded-2xl shadow mb-8"> 
+        <h3 class="font-semibold mb-4">Attendance Trend</h3> 
+        <canvas id="attendanceChart"></canvas> 
+    </div>
+
+
+    <!-- COURSES + ACTIVITY -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- COURSES -->
+      <div class="lg:col-span-2 bg-white rounded-3xl p-6 shadow">
+
+        <div class="flex justify-between items-center mb-6">
+
+          <h3 class="text-2xl font-bold text-gray-800">
+            My Courses
+          </h3>
+
+          <span class="text-green-600 text-sm font-semibold">
+            See all
+          </span>
+
+        </div>
+
+        <!-- COURSES LIST -->
+        <div id="coursesList"
+             class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        </div>
+
+      </div>
+
+
+      <!-- RECENT ACTIVITY -->
+      <div class="bg-white rounded-3xl p-6 shadow">
+
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+          Recent Activities
+        </h3>
+
+        <div id="recentActivities"
+             class="space-y-4 activity-scroll">
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <div id="footer"></div>
+
+</div>
+
+
+<!-- LOADER -->
+<div id="loader"></div>
+
+
+<!-- COMPONENTS -->
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  loadComponent("sidebar", "/components/sidebar.html");
+
+  loadComponent("navbar", "/components/navbar.html");
+
+  loadComponent("footer", "/components/footer.html");
+
+  loadComponent("loader", "/components/loader.html");
+
+});
+
+</script>
+
+
+<!-- LOGOUT -->
+<script>
+
+function logout() {
+
+  localStorage.clear();
+
+  window.location.href = "login.html";
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<aside style="width:260px; background:linear-gradient(180deg,#020617,#0f172a); position:fixed; top:0; left:0; height:100vh; z-index:40; display:flex; flex-direction:column; justify-content:space-between; padding:24px;">
+
+  <!-- LOGO -->
+  <div>
+    <h1 style="font-size:2rem; font-weight:800; color:#34d399; margin-bottom:3rem; letter-spacing:-1px;">SMS</h1>
+
+    <nav style="display:flex; flex-direction:column; gap:8px;" id="sidebarNav">
+
+      <a href="/dashboard" data-page="dashboard"
+        class="sidebar-link"
+        style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; color:white; text-decoration:none; font-weight:500; transition:background 0.2s;">
+        <i class="fa-solid fa-house" style="width:18px;"></i>
+        Dashboard
+      </a>
+
+      <a href="/courses" data-page="courses"
+        class="sidebar-link"
+        style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; color:white; text-decoration:none; font-weight:500; transition:background 0.2s;">
+        <i class="fa-solid fa-book" style="width:18px;"></i>
+        Courses
+      </a>
+
+      <a href="/attendance" data-page="attendance"
+        class="sidebar-link"
+        style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; color:white; text-decoration:none; font-weight:500; transition:background 0.2s;">
+        <i class="fa-solid fa-calendar-check" style="width:18px;"></i>
+        Attendance
+      </a>
+
+      <a href="/students" data-page="students"
+        class="sidebar-link"
+        style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:14px; color:white; text-decoration:none; font-weight:500; transition:background 0.2s;">
+        <i class="fa-solid fa-users" style="width:18px;"></i>
+        Students
+      </a>
+
+    </nav>
+  </div>
+
+  <!-- BOTTOM USER -->
+  <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top:16px; display:flex; align-items:center; gap:10px;">
+    <div style="width:36px; height:36px; border-radius:50%; background:#34d399; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#0f172a; font-size:0.85rem;" id="sidebarAvatar">U</div>
+    <div>
+      <p style="color:white; font-size:0.85rem; font-weight:600; margin:0;" id="sidebarName">User</p>
+      <p style="color:#94a3b8; font-size:0.7rem; margin:0;">Teacher</p>
+    </div>
+  </div>
+
+</aside>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+<script>
+(function() {
+  const path = window.location.pathname;
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    const page = link.getAttribute('data-page');
+    if (path.includes(page)) {
+      link.style.background = '#22c55e';
+    } else {
+      link.addEventListener('mouseover', () => link.style.background = '#22c55e');
+      link.addEventListener('mouseout', () => link.style.background = 'transparent');
+    }
+  });
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user.name) {
+    const nameEl = document.getElementById('sidebarName');
+    const avatarEl = document.getElementById('sidebarAvatar');
+    if (nameEl) nameEl.textContent = user.name;
+    if (avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
+  }
+})();
+</script>

@@ -1,0 +1,53 @@
+<div class="bg-white px-8 py-5 flex justify-between items-center border-b">
+
+  <!-- LEFT: Page Title + Subtitle -->
+  <div>
+    <h1 id="navPageTitle" class="text-3xl font-bold text-slate-800"></h1>
+    <p id="navPageSubtitle" class="text-sm text-gray-400 mt-0.5"></p>
+  </div>
+
+  <!-- RIGHT: User + Logout -->
+  <div class="flex items-center gap-4">
+
+    </div>
+
+    <button onclick="logout()"
+      class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 font-semibold px-4 py-2 rounded-xl transition text-sm">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      Logout
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+(function () {
+
+  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const userName = user.name || user.full_name || user.username || "User";
+
+  const nameEl   = document.getElementById("navUserName");
+  const avatarEl = document.getElementById("navAvatar");
+  if (nameEl)   nameEl.textContent   = userName;
+  if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+
+  const path = window.location.pathname.toLowerCase();
+
+  const pages = {
+    "dashboard"  : { title: "Welcome, " + userName + " 👋", sub: "Here's what's happening with your classes today." },
+    "courses"    : { title: "My Courses",         sub: "Manage and organize your courses" },
+    "attendance" : { title: "Attendance Center",  sub: "Manage daily logs and monthly reports" },
+    "students"   : { title: "Students Directory", sub: "View and manage your enrolled students" },
+  };
+
+  const matched = Object.keys(pages).find(k => path.includes(k));
+  const page = matched ? pages[matched] : { title: "", sub: "" };
+
+  const titleEl    = document.getElementById("navPageTitle");
+  const subtitleEl = document.getElementById("navPageSubtitle");
+  if (titleEl)    titleEl.textContent    = page.title;
+  if (subtitleEl) subtitleEl.textContent = page.sub;
+
+})();
+</script>

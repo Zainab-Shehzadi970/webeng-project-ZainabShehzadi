@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Students - SMS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="/utils/helpers.js"></script>
+<script src="/assets/js/students.js" defer></script>
+<style>
+body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+</head>
+
+<body class="bg-gray-100">
+
+<script>
+if (!localStorage.getItem('token')) window.location.href = '/login';
+</script>
+
+<div class="flex">
+  <div id="sidebar"></div>
+
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+    <div id="navbar"></div>
+
+    <div class="p-8 flex-1">
+
+      <!-- TOP BAR -->
+      <div class="flex justify-end items-center mb-6 gap-3">
+
+        <!-- Import -->
+        <label class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl cursor-pointer flex items-center gap-2 text-sm font-semibold">
+          <i class="fa-solid fa-file-import"></i> Import Excel
+          <input type="file" id="importFile" accept=".xlsx,.xls" class="hidden">
+        </label>
+
+        <!-- Export -->
+        <button onclick="openExportModal()"
+         class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold">
+         <i class="fa-solid fa-file-export"></i> Export Excel
+       </button>
+
+        <!-- Add Student -->
+        <button onclick="openAddModal()"
+          class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold shadow">
+          <i class="fa-solid fa-plus"></i> Add Student
+        </button>
+
+      </div>
+
+      <!-- FILTERS -->
+      <div class="flex gap-4 mb-6">
+        <input id="searchInput" placeholder="Search by name or ID..."
+          class="flex-1 px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-400">
+        <select id="courseFilter"
+          class="px-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-400 min-w-[180px]">
+          <option value="">All Courses</option>
+        </select>
+      </div>
+
+      <!-- TABLE -->
+      <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-gray-50 text-gray-500 text-sm uppercase tracking-wide border-b">
+            <tr>
+              <th class="text-left p-5">Student Name</th>
+              <th class="text-left p-5">Student ID</th>
+              <th class="text-left p-5">Course</th>
+              <th class="text-right p-5">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTable"></tbody>
+        </table>
+
+        <div class="bg-slate-900 text-white px-6 py-3 text-sm flex justify-between">
+          <span>Showing active enrollments</span>
+          <span id="totalCount">0 Students Total</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="footer"></div>
+  </div>
+</div>
+
+<div id="loader"></div>
+
+<!-- MODAL -->
+<div id="studentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+
+    <h2 id="modalTitle" class="text-xl font-bold mb-6">Add New Student</h2>
+
+    <!-- Name -->
+    <div class="mb-4">
+      <label class="text-sm font-semibold text-gray-700 mb-1 block">Student Name <span class="text-red-500">*</span></label>
+      <input id="studentName" placeholder="e.g. John Doe"
+        class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-400">
+      <p id="nameError" class="text-red-500 text-xs mt-1 hidden">Name is required</p>
+    </div>
+
+    <!-- Student ID -->
+    <div class="mb-4">
+      <label class="text-sm font-semibold text-gray-700 mb-1 block">Student ID <span class="text-red-500">*</span></label>
+      <input id="studentId" placeholder="e.g. 2026-CS-101"
+        class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-400">
+      <p id="idError" class="text-red-500 text-xs mt-1 hidden">Student ID is required</p>
+    </div>
+
+    <!-- Course -->
+    <div class="mb-6">
+      <label class="text-sm font-semibold text-gray-700 mb-1 block">Course <span class="text-red-500">*</span></label>
+      <select id="studentCourse"
+        class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-400">
+        <option value="">-- Select Course --</option>
+      </select>
+      <p id="courseError" class="text-red-500 text-xs mt-1 hidden">Please select a course</p>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button onclick="closeModal()"
+        class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold text-sm">Cancel</button>
+      <button onclick="saveStudent()"
+        class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm">Save</button>
+    </div>
+
+  </div>
+</div>
+<!-- EXPORT MODAL -->
+<div id="exportModal"
+  class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+
+  <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fadeIn">
+
+    <!-- HEADER -->
+    <div class="flex items-center justify-between px-7 py-5 border-b">
+      <h2 class="text-2xl font-bold text-slate-800">
+        Export Students Data
+      </h2>
+
+      <button onclick="closeExportModal()"
+        class="text-gray-400 hover:text-red-500 text-xl">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- BODY -->
+    <div class="p-7">
+
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Select Course
+      </label>
+
+      <div class="relative">
+        <select id="exportCourse"
+          class="w-full border-2 border-emerald-500 rounded-2xl px-4 py-4 outline-none text-lg bg-white focus:ring-4 focus:ring-emerald-100">
+
+          <option value="">All Courses</option>
+
+        </select>
+      </div>
+
+      <p class="text-gray-500 text-sm mt-5">
+        All data for the selected course(s) will be downloaded.
+      </p>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="flex justify-end gap-3 px-7 py-5 border-t bg-gray-50">
+
+      <button onclick="closeExportModal()"
+        class="px-5 py-3 rounded-xl bg-gray-200 hover:bg-gray-300 font-semibold">
+        Cancel
+      </button>
+
+      <button onclick="exportStudents()"
+        class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
+
+        <i class="fa-solid fa-file-excel text-emerald-400"></i>
+        Export to Excel
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  loadComponent("sidebar", "/components/sidebar.html");
+  loadComponent("navbar",  "/components/navbar.html");
+  loadComponent("footer",  "/components/footer.html");
+  loadComponent("loader",  "/components/loader.html");
+});
+</script>
+
+
+
+</body>
+</html>

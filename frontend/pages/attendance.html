@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance - SMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="/utils/helpers.js"></script>
+  <script src="/assets/js/attendance.js" defer></script>
+  <style>
+    body { background:#f5f7fb; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .status-btn { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; cursor:pointer; transition:0.2s; }
+    .status-btn:hover { transform:scale(1.05); }
+    .present { background:#22c55e; color:white; box-shadow:0 0 10px rgba(34,197,94,.5); }
+    .absent  { background:#ef4444; color:white; box-shadow:0 0 10px rgba(239,68,68,.5); }
+    .leave   { background:#facc15; color:white; box-shadow:0 0 10px rgba(250,204,21,.5); }
+    .unset   { background:#e5e7eb; color:#6b7280; }
+    .glass   { background:white; border-radius:24px; box-shadow:0 4px 18px rgba(0,0,0,.07); }
+  </style>
+</head>
+
+<body>
+<script>
+  if (!localStorage.getItem('token')) window.location.href = '/login';
+</script>
+
+<div class="flex">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar"></div>
+
+  <!-- MAIN -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <div id="navbar"></div>
+
+    <main class="p-8 flex-1">
+
+      <!-- TOP BUTTONS -->
+      <div class="flex justify-end gap-3 mb-6">
+        <button id="exportBtn" onclick="openBulkExportModal()"
+          class="bg-gray-100 hover:bg-gray-200 px-5 py-2 rounded-xl font-semibold text-sm flex items-center gap-2">
+          <i class="fa-solid fa-file-excel text-green-600"></i> Bulk Export (Excel)
+        </button>
+        <button id="saveAttendance"
+          class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-semibold text-sm shadow">
+          Save Changes
+        </button>
+      </div>
+
+      <!-- FILTER -->
+      <div class="glass p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Operation Mode</label>
+            <div class="flex gap-2">
+              <button id="markNewBtn" onclick="setMode('new')"
+                class="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white">Mark New</button>
+              <button id="viewHistoryBtn" onclick="setMode('history')"
+                class="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-gray-600">View History</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Select Course</label>
+            <select id="courseSelect" onchange="onCourseChange()"
+              class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-400">
+              <option value="">-- Select Course --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date</label>
+            <input type="date" id="attendanceDate" onchange="onDateChange()"
+              class="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-400"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="glass overflow-hidden">
+        <div class="p-5 flex gap-3 border-b">
+          <button onclick="presentAll()"
+            class="bg-green-100 text-green-700 px-4 py-2 rounded-xl font-semibold text-sm">PRESENT ALL</button>
+          <button onclick="resetAttendance()"
+            class="bg-gray-100 px-4 py-2 rounded-xl font-semibold text-sm">RESET</button>
+          <span class="ml-auto text-gray-400 text-sm flex items-center" id="tableHint">Select course and date to load attendance</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="border-b bg-gray-50">
+              <tr class="text-left text-gray-500 text-sm uppercase tracking-wide">
+                <th class="p-5">Student Info</th>
+                <th class="p-5">Status</th>
+                <th class="p-5">Monthly Avg</th>
+                <th class="p-5">Summary</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTable"></tbody>
+          </table>
+        </div>
+
+        <!-- FOOTER BAR -->
+        <div class="bg-slate-800 text-white px-6 py-3 flex justify-between items-center text-sm">
+          <span>AVG. CLASS ATTENDANCE: <strong id="avgDisplay">0%</strong></span>
+          <span class="text-gray-400">DOWNLOAD AS: <strong>EXCEL (.xlsx)</strong></span>
+        </div>
+      </div>
+
+    </main>
+
+    <div id="footer"></div>
+  </div>
+</div>
+
+
+<!-- EDIT ATTENDANCE MODAL -->
+<div id="editAttendanceModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+
+    <!-- Header -->
+    <div class="bg-slate-50 border-b px-6 py-4 flex justify-between items-center">
+      <h2 class="text-lg font-bold text-slate-800">Edit Attendance</h2>
+      <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+    </div>
+
+    <div class="p-6">
+      <!-- Student Name Banner -->
+      <div class="bg-slate-800 text-white rounded-xl px-5 py-3 text-center font-bold text-base mb-6" id="editStudentLabel"></div>
+
+      <input type="hidden" id="editStudentId">
+
+      <!-- Status Row -->
+      <div class="flex items-center gap-4 mb-3">
+        <label class="text-sm font-semibold text-gray-700 w-16 shrink-0">Status:</label>
+        <div class="relative flex-1">
+          <select id="editStatusSelect"
+            onchange="updateEditBadge(this)"
+            class="w-full appearance-none border-2 border-emerald-400 rounded-xl pl-10 pr-10 py-2.5 text-sm font-semibold outline-none cursor-pointer bg-white">
+            <option value="">-- Select --</option>
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="leave">Leave</option>
+          </select>
+          <!-- Badge inside select (left) -->
+          <span id="editStatusBadge"
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-white text-xs font-bold pointer-events-none">
+          </span>
+          <!-- Chevron -->
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▼</span>
+        </div>
+      </div>
+
+      <!-- Date -->
+      <p class="text-sm text-gray-400 mb-6 pl-20" id="editDateLabel"></p>
+
+      <!-- Buttons -->
+      <div class="flex gap-3">
+        <button onclick="closeEditModal()"
+          class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-sm text-gray-600 transition">
+          Cancel
+        </button>
+        <button onclick="saveEditAttendance()"
+          class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm shadow transition">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div id="logModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">Student Detailed Log</h2>
+      <button onclick="closeLogModal()" class="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+    </div>
+    <div id="logContent"></div>
+  </div>
+</div>
+
+<div id="loader"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  loadComponent("sidebar", "/components/sidebar.html");
+  loadComponent("navbar",  "/components/navbar.html");
+  loadComponent("footer",  "/components/footer.html");
+  loadComponent("loader",  "/components/loader.html");
+});
+</script>
+
+
+<!-- BULK EXPORT MODAL -->
+<div id="bulkExportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+    <div class="bg-slate-50 border-b px-6 py-4 flex justify-between items-center">
+      <h2 class="text-lg font-bold text-slate-800">Bulk Export (Excel)</h2>
+      <button onclick="closeBulkExportModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+    </div>
+    <div class="p-6 space-y-5">
+      <!-- Course Selection -->
+      <div class="flex items-center gap-4">
+        <label class="text-sm font-semibold text-gray-700 w-36 shrink-0">Course Selection:</label>
+        <select id="bulkCourseSelect"
+          class="flex-1 border-2 border-emerald-400 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-300">
+        </select>
+      </div>
+      <!-- Date Range -->
+      <div>
+        <p class="text-sm font-semibold text-gray-700 mb-3">Date Range:</p>
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 mb-1 block">From Date:</label>
+            <input type="date" id="bulkFromDate"
+              class="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300"/>
+          </div>
+          <div class="flex-1">
+            <label class="text-xs text-gray-500 mb-1 block">To Date:</label>
+            <input type="date" id="bulkToDate"
+              class="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-300"/>
+          </div>
+        </div>
+      </div>
+      <!-- Buttons -->
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeBulkExportModal()"
+          class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-sm text-gray-600 transition">
+          Cancel
+        </button>
+        <button onclick="doBulkExport()"
+          class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-file-excel"></i> Export Data
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
