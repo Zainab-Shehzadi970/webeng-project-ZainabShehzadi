@@ -23,13 +23,13 @@ if (!localStorage.getItem('token')) window.location.href = '/login';
 <div class="flex">
   <div id="sidebar"></div>
 
-  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+  <div class="md:ml-64 flex-1 flex flex-col min-h-screen">
     <div id="navbar"></div>
 
-    <div class="p-8 flex-1">
+    <div class="p-4 md:p-8 flex-1">
 
       <!-- TOP BAR -->
-      <div class="flex justify-end items-center mb-6 gap-3">
+      <div class="flex flex-wrap justify-end items-center mb-6 gap-3">
 
         <!-- Import -->
         <label class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl cursor-pointer flex items-center gap-2 text-sm font-semibold">
@@ -63,7 +63,8 @@ if (!localStorage.getItem('token')) window.location.href = '/login';
 
       <!-- TABLE -->
       <div class="bg-white rounded-2xl shadow overflow-hidden">
-        <table class="w-full">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[600px]">
           <thead class="bg-gray-50 text-gray-500 text-sm uppercase tracking-wide border-b">
             <tr>
               <th class="text-left p-5">Student Name</th>

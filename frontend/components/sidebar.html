@@ -1,4 +1,18 @@
-<aside style="width:260px; background:linear-gradient(180deg,#020617,#0f172a); position:fixed; top:0; left:0; height:100vh; z-index:40; display:flex; flex-direction:column; justify-content:space-between; padding:24px;">
+<!-- HAMBURGER BUTTON - mobile only -->
+<button id="sidebarToggle"
+  onclick="toggleSidebar()"
+  style="display:none; position:fixed; top:16px; left:16px; z-index:100; background:#22c55e; border:none; border-radius:10px; width:42px; height:42px; cursor:pointer; align-items:center; justify-content:center;">
+  <i class="fa-solid fa-bars" style="color:white; font-size:1.1rem;"></i>
+</button>
+
+<!-- OVERLAY - mobile only -->
+<div id="sidebarOverlay"
+  onclick="closeSidebar()"
+  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:39;">
+</div>
+
+<aside id="mainSidebar"
+  style="width:260px; background:linear-gradient(180deg,#020617,#0f172a); position:fixed; top:0; left:0; height:100vh; z-index:40; display:flex; flex-direction:column; justify-content:space-between; padding:24px; transition: transform 0.3s ease;">
 
   <!-- LOGO -->
   <div>
@@ -50,7 +64,35 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
+<style>
+@media (max-width: 768px) {
+  #mainSidebar {
+    transform: translateX(-100%);
+  }
+  #mainSidebar.open {
+    transform: translateX(0);
+  }
+  #sidebarToggle {
+    display: flex !important;
+  }
+}
+</style>
+
 <script>
+function toggleSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.toggle('open');
+  overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('mainSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.remove('open');
+  overlay.style.display = 'none';
+}
+
 (function() {
   const path = window.location.pathname;
   document.querySelectorAll('.sidebar-link').forEach(link => {
@@ -59,15 +101,15 @@
       link.style.background = '#22c55e';
     } else {
       link.addEventListener('mouseover', () => link.style.background = '#22c55e');
-      link.addEventListener('mouseout', () => link.style.background = 'transparent');
+      link.addEventListener('mouseout',  () => link.style.background = 'transparent');
     }
   });
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user.name) {
-    const nameEl = document.getElementById('sidebarName');
+    const nameEl   = document.getElementById('sidebarName');
     const avatarEl = document.getElementById('sidebarAvatar');
-    if (nameEl) nameEl.textContent = user.name;
+    if (nameEl)   nameEl.textContent   = user.name;
     if (avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
   }
 })();
