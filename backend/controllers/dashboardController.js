@@ -37,14 +37,14 @@ exports.getDashboard = async (req, res, next) => {
     `, [user_id]);
 
     const [attActivity] = await db.promise().query(`
-      SELECT c.name AS course_name, DATE(a.date) as date, 'attendance' as type
-      FROM attendance a
-      JOIN students s ON s.id = a.student_id
-      JOIN courses c ON c.id = s.course_id
-      WHERE s.user_id = ?
-      GROUP BY c.name, DATE(a.date)
-      ORDER BY a.date DESC LIMIT 5
-    `, [user_id]);
+    SELECT c.name AS course_name, DATE(a.date) as date, 'attendance' as type
+     FROM attendance a
+     JOIN students s ON s.id = a.student_id
+     JOIN courses c ON c.id = s.course_id
+     WHERE s.user_id = ?
+     GROUP BY c.name, DATE(a.date)
+     ORDER BY DATE(a.date) DESC LIMIT 5
+`  , [user_id]);
 
     const myCourses = await new Promise((resolve, reject) => {
       courseModel.getCourses(user_id, (err, results) => {
