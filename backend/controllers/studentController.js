@@ -114,7 +114,7 @@ exports.importStudents = (req, res, next) => {
       return next(err);
     }
     const filePath = req.file.path;
-    const students = importExcel(filePath);
+    const students = importExcel(req.file.buffer);
 
     if (!students || students.length === 0) {
       const err = new Error('No valid data found in Excel ❌');

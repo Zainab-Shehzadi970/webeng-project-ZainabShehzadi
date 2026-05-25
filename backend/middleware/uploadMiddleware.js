@@ -1,18 +1,8 @@
 const multer = require('multer');
 const path = require('path');
 
-// Storage config
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // ✅ Fix: absolute path use karo
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
+// ✅ Memory storage - Railway ke liye (disk ephemeral hoti hai)
+const storage = multer.memoryStorage();
 
 // File filter (sirf Excel allow)
 const fileFilter = (req, file, cb) => {

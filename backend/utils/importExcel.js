@@ -1,7 +1,11 @@
 const XLSX = require('xlsx');
 
-const importExcel = (filePath) => {
-  const workbook = XLSX.readFile(filePath);
+// ✅ filePath ki jagah buffer bhi accept karta hai
+const importExcel = (filePathOrBuffer) => {
+  const workbook = Buffer.isBuffer(filePathOrBuffer)
+    ? XLSX.read(filePathOrBuffer)           // memory storage
+    : XLSX.readFile(filePathOrBuffer);      // fallback
+
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json(sheet);
 
