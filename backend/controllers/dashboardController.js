@@ -1,13 +1,16 @@
 const db = require('../config/db');
 const courseModel = require('../models/courseModel');
 
-exports.getDashboard = async (req, res, next) => {
+exports.getDashboard = async (req, res) => {
 
   const user_id = req.user.id;
 
   try {
 
-    // ✅ Total Students
+    // ======================================================
+    // TOTAL STUDENTS
+    // ======================================================
+
     const [students] = await db.promise().query(
       `
       SELECT COUNT(*) as total
@@ -18,7 +21,10 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Total Courses
+    // ======================================================
+    // TOTAL COURSES
+    // ======================================================
+
     const [courses] = await db.promise().query(
       `
       SELECT COUNT(*) as total
@@ -29,17 +35,20 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Average Attendance
+    // ======================================================
+    // AVG ATTENDANCE
+    // ======================================================
+
     const [attendance] = await db.promise().query(
       `
       SELECT ROUND(
         SUM(
           CASE
-            WHEN a.status IN ('present', 'P')
+            WHEN a.status IN ('present','P')
             THEN 1
             ELSE 0
           END
-        ) / NULLIF(COUNT(*), 0) * 100
+        ) / NULLIF(COUNT(*),0) * 100
       ) AS avgAttendance
 
       FROM attendance a
@@ -53,7 +62,10 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Attendance Trend
+    // ======================================================
+    // ATTENDANCE TREND
+    // ======================================================
+
     const [trend] = await db.promise().query(
       `
       SELECT
@@ -62,11 +74,11 @@ exports.getDashboard = async (req, res, next) => {
         ROUND(
           SUM(
             CASE
-              WHEN a.status IN ('present', 'P')
+              WHEN a.status IN ('present','P')
               THEN 1
               ELSE 0
             END
-          ) / NULLIF(COUNT(*), 0) * 100
+          ) / NULLIF(COUNT(*),0) * 100
         ) as percentage
 
       FROM attendance a
@@ -86,13 +98,16 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Attendance Activity
+    // ======================================================
+    // ATTENDANCE ACTIVITY
+    // ONLY ONE ENTRY PER COURSE + DATE
+    // ======================================================
+
     const [attActivity] = await db.promise().query(
       `
       SELECT
         c.name AS course_name,
-        MAX(a.date) as date,
-        'attendance' as type
+        MAX(a.date) as date
 
       FROM attendance a
 
@@ -114,17 +129,22 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Student Activity
+    // ======================================================
+    // RECENTLY ADDED STUDENTS
+    // ======================================================
+
     const [studentActivity] = await db.promise().query(
       `
       SELECT
         name,
-        created_at as date,
-        'student' as type
+        created_at as date
 
       FROM students
 
-      WHERE user_id = ?
+      WHERE
+        user_id = ?
+        AND name IS NOT NULL
+        AND name != ''
 
       ORDER BY created_at DESC
 
@@ -134,17 +154,22 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Course Activity
+    // ======================================================
+    // RECENTLY ADDED COURSES
+    // ======================================================
+
     const [courseActivity] = await db.promise().query(
       `
       SELECT
         name,
-        created_at as date,
-        'course' as type
+        created_at as date
 
       FROM courses
 
-      WHERE user_id = ?
+      WHERE
+        user_id = ?
+        AND name IS NOT NULL
+        AND name != ''
 
       ORDER BY created_at DESC
 
@@ -154,41 +179,77 @@ exports.getDashboard = async (req, res, next) => {
     );
 
 
-    // ✅ Merge Activities
-    const allActivities = [
+    // ======================================================
+    // FORMAT ACTIVITIES
+    // ======================================================
 
-      ...attActivity.map(a => ({
-        text: `Attendance marked for ${a.course_name}`,
-        date: a.date,
-        type: 'attendance'
-      })),
+   const formattedAttendance = attActivity.map(a => ({
+  text: `Attendance marked for ${a.course_name}`,
+  date: a.date,
+  type: 'attendance'
+}));
 
-      ...studentActivity.map(s => ({
-        text: `Student added: ${s.name}`,
-        date: s.date,
-        type: 'student'
-      })),
 
-      ...courseActivity.map(c => ({
-        text: `Course added: ${c.name}`,
-        date: c.date,
-        type: 'course'
-      }))
+const formattedStudents = studentActivity.map(s => ({
+  text: `Added new student ${s.name}`,
+  date: s.date,
+  type: 'student'
+}));
+
+
+const formattedCourses = courseActivity.map(c => ({
+  text: `Added new course ${c.name}`,
+  date: c.date,
+  type: 'course'
+}));
+
+    // ======================================================
+    // MERGE ALL
+    // ======================================================
+
+    let allActivities = [
+
+      ...formattedAttendance,
+
+      ...formattedStudents,
+
+      ...formattedCourses
 
     ];
 
 
-    // ✅ Sort Latest First
+    // ======================================================
+    // REMOVE DUPLICATES
+    // ======================================================
+
+    allActivities = allActivities.filter(
+      (item, index, self) =>
+        index === self.findIndex(
+          t => t.text === item.text
+        )
+    );
+
+
+    // ======================================================
+    // SORT LATEST FIRST
+    // ======================================================
+
     allActivities.sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
 
 
-    // ✅ Only Latest 5
+    // ======================================================
+    // ONLY LATEST 5
+    // ======================================================
+
     const recentActivity = allActivities.slice(0, 5);
 
 
-    // ✅ My Courses
+    // ======================================================
+    // MY COURSES
+    // ======================================================
+
     const myCourses = await new Promise((resolve, reject) => {
 
       courseModel.getCourses(user_id, (err, results) => {
@@ -202,7 +263,10 @@ exports.getDashboard = async (req, res, next) => {
     });
 
 
-    // ✅ Final Response
+    // ======================================================
+    // FINAL RESPONSE
+    // ======================================================
+
     return res.json({
 
       success: true,

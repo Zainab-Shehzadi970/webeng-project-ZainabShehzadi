@@ -527,10 +527,35 @@ async function doBulkExport() {
   const fromDate  = document.getElementById('bulkFromDate').value;
   const toDate    = document.getElementById('bulkToDate').value;
 
-  if (!courseId)           return alert('Please select a course');
+  if (!courseId)            return alert('Please select a course');
   if (!fromDate || !toDate) return alert('Please select date range');
-  if (fromDate > toDate)   return alert('From Date cannot be after To Date');
+  if (fromDate > toDate)    return alert('From Date cannot be after To Date');
 
   closeBulkExportModal();
-  window.open(`/api/attendance/export/bulk?course_id=${courseId}&from_date=${fromDate}&to_date=${toDate}`);
+
+  try {
+    showLoader();
+    const res = await fetch(
+      `/api/attendance/export/bulk?course_id=${courseId}&from_date=${fromDate}&to_date=${toDate}`,
+      { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } }
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Export failed');
+    }
+
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `attendance_${fromDate}_to_${toDate}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(link.href);
+  } catch (err) {
+    alert('❌ Export failed: ' + err.message);
+  } finally {
+    hideLoader();
+  }
 }

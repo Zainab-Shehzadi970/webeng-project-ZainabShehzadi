@@ -51,6 +51,7 @@ async function loadDashboard() {
 
 
    // ✅ RECENT ACTIVITY
+// ✅ RECENT ACTIVITY
 const activityContainer =
   document.getElementById('recentActivities');
 
@@ -60,65 +61,90 @@ if (data.recentActivity?.length) {
 
   data.recentActivity.forEach(item => {
 
+    // ✅ normalize type
+    const type = (item.type || '').trim().toLowerCase();
+
     let message = '';
     let icon = '📌';
     let bg = 'bg-red-100';
 
-    // 📌 Attendance
-    if (item.type === 'attendance') {
+    // ==================================================
+    // ATTENDANCE
+    // ==================================================
 
-      message = `
-        Attendance marked for 
-        ${item.course_name}
-      `;
+    if (type === 'attendance') {
+
+      message =
+        item.text ||
+        `Attendance marked for ${item.course_name}`;
 
       icon = '📌';
       bg = 'bg-red-100';
     }
 
-    // 🎓 Student
-    else if (item.type === 'student') {
+    // ==================================================
+    // STUDENT
+    // ==================================================
 
-      message = `
-        Added new student 
-        ${item.name}
-      `;
+    else if (type === 'student') {
+
+      message =
+        item.text ||
+        `Added new student ${item.name}`;
 
       icon = '🎓';
       bg = 'bg-yellow-100';
     }
 
-    // 📚 Course
-    else if (item.type === 'course') {
+    // ==================================================
+    // COURSE
+    // ==================================================
 
-      message = `
-        Added new course 
-        ${item.name}
-      `;
+    else if (type === 'course') {
+
+      message =
+        item.text ||
+        `Added new course ${item.name}`;
 
       icon = '📚';
       bg = 'bg-green-100';
     }
 
+    // ==================================================
+    // DEFAULT
+    // ==================================================
+
+    else {
+
+      message = item.text || 'New Activity';
+
+      icon = '📌';
+      bg = 'bg-gray-100';
+    }
+
+    // ==================================================
+    // HTML
+    // ==================================================
+
     activityContainer.innerHTML += `
 
-      <div class="flex items-start gap-3 p-3 border-b">
+      <div class="flex items-start gap-3 p-3 border-b border-gray-100">
 
         <div class="w-10 h-10 rounded-full ${bg}
-        flex items-center justify-center text-lg">
+        flex items-center justify-center text-lg flex-shrink-0">
 
           ${icon}
 
         </div>
 
-        <div>
+        <div class="flex-1">
 
-          <p class="text-sm font-medium text-gray-700">
+          <p class="text-sm font-medium text-gray-700 leading-5">
             ${message}
           </p>
 
           <p class="text-xs text-gray-400 mt-1">
-            ${new Date(item.date).toLocaleDateString()}
+            ${new Date(item.date).toLocaleDateString('en-GB')}
           </p>
 
         </div>
