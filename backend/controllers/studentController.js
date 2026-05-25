@@ -113,7 +113,8 @@ exports.importStudents = (req, res, next) => {
       err.statusCode = 400;
       return next(err);
     }
-    const filePath = req.file.path;
+
+    // Import (Railway memory storage)
     const students = importExcel(req.file.buffer);
 
     if (!students || students.length === 0) {
@@ -133,12 +134,12 @@ exports.importStudents = (req, res, next) => {
       }).filter(v => v[0] && v[1] && v[2]);
 
       if (!values.length) {
-        fs.unlinkSync(filePath);
+        // ✅ fs.unlinkSync hata diya — memory storage mein file hoti nahi disk pe
         return res.status(400).json({ success: false, message: 'Course names match nahi hue ❌' });
       }
 
       studentModel.bulkInsertStudents(values, (err, result) => {
-        fs.unlinkSync(filePath);
+        // ✅ fs.unlinkSync hata diya
         if (err) return next(err);
         return success(res, { inserted: result.affectedRows, total: students.length }, 'Students imported ✅');
       });
