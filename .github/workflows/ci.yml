@@ -3,6 +3,7 @@ name: CI — Run Tests
 on:
   push:
     branches: [ main, master ]
+
   pull_request:
     branches: [ main, master ]
 
@@ -10,88 +11,101 @@ permissions:
   contents: read
 
 jobs:
+
   test:
+
     name: Run Unit & E2E Tests
+
     runs-on: ubuntu-latest
 
     services:
+
       mysql:
+
         image: mysql:8.0
+
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: student_management
+
         ports:
           - 3306:3306
+
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -h localhost -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     steps:
 
+      # ✅ Checkout Repo
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ github.token }}
 
-      - name: Setup Node.js 18
+      # ✅ Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: '18'
 
+        with:
+          node-version: 18
+
+      # ✅ Install Dependencies
       - name: Install dependencies
         run: npm install
 
-      - name: Setup database
-        run: |
-          mysql -h 127.0.0.1 -u root -proot student_management < database/schema.sql
-
+      # ✅ Create .env
       - name: Create .env file
         run: |
-          cat > .env << ENVEOF
+
+          cat > .env << EOF
+
           PORT=5000
+
           DB_HOST=127.0.0.1
           DB_USER=root
           DB_PASSWORD=root
           DB_NAME=student_management
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          ENVEOF
 
+          JWT_SECRET=testsecret
+
+          NODE_ENV=test
+
+          EOF
+
+      # ✅ Import Schema
+      - name: Setup Database
+        run: |
+
+          mysql -h 127.0.0.1 \
+          -u root \
+          -proot \
+          student_management \
+          < database/schema.sql
+
+      # ✅ Seed Test User
       - name: Seed test user
         run: |
-          mysql -h 127.0.0.1 -u root -proot student_management -e "
-            INSERT IGNORE INTO users (name, email, password)
-            VALUES ('Zainab Shehzadi', 'zainabshehzadi970@gmail.com',
-            '\$2b\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+
+          mysql -h 127.0.0.1 \
+          -u root \
+          -proot \
+          student_management \
+          -e "
+
+          INSERT IGNORE INTO users
+          (name, email, password)
+
+          VALUES
+          (
+            'Test User',
+            'test@test.com',
+
+            '\$2b\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+          );
+
           "
 
-      - name: Start server
-        run: node backend/server.js &
-        env:
-          PORT: 5000
-          DB_HOST: 127.0.0.1
-          DB_USER: root
-          DB_PASSWORD: root
-          DB_NAME: student_management
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-
-      - name: Wait for server
-        run: |
-          for i in {1..15}; do
-            curl -s http://localhost:5000/api/auth/login \
-              -X POST -H "Content-Type: application/json" \
-              -d '{"email":"x","password":"x"}' && break
-            echo "Waiting... ($i)"
-            sleep 2
-          done
-
+      # ✅ Run Tests
       - name: Run tests
         run: npm test
-        env:
-          PORT: 5000
-          DB_HOST: 127.0.0.1
-          DB_USER: root
-          DB_PASSWORD: root
-          DB_NAME: student_management
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
