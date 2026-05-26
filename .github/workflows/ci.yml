@@ -6,12 +6,14 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Run Unit & E2E Tests
     runs-on: ubuntu-latest
 
-    # ── MySQL Service ──────────────────────────────
     services:
       mysql:
         image: mysql:8.0
@@ -28,40 +30,35 @@ jobs:
 
     steps:
 
-      # ── 1. Checkout code ──────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
 
-      # ── 2. Setup Node.js ──────────────────────────
       - name: Setup Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      # ── 3. Install dependencies ───────────────────
       - name: Install dependencies
         run: npm install
 
-      # ── 4. Setup database schema ──────────────────
       - name: Setup database
         run: |
           mysql -h 127.0.0.1 -u root -proot student_management < database/schema.sql
 
-      # ── 5. Create .env for tests ──────────────────
       - name: Create .env file
         run: |
-          cat > .env << EOF
+          cat > .env << ENVEOF
           PORT=5000
           DB_HOST=127.0.0.1
           DB_USER=root
           DB_PASSWORD=root
           DB_NAME=student_management
           JWT_SECRET=${{ secrets.JWT_SECRET }}
-          EOF
+          ENVEOF
 
-      # ── 6. Seed test user ─────────────────────────
-      - name: Seed test user for auth tests
+      - name: Seed test user
         run: |
           mysql -h 127.0.0.1 -u root -proot student_management -e "
             INSERT IGNORE INTO users (name, email, password)
@@ -69,33 +66,32 @@ jobs:
             '\$2b\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
           "
 
-      # ── 7. Start server in background ─────────────
       - name: Start server
-        run: npm start &
+        run: node backend/server.js &
         env:
           PORT: 5000
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: student_management
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
-      # ── 8. Wait for server to be ready ────────────
       - name: Wait for server
         run: |
           for i in {1..15}; do
             curl -s http://localhost:5000/api/auth/login \
               -X POST -H "Content-Type: application/json" \
               -d '{"email":"x","password":"x"}' && break
-            echo "Waiting for server... ($i)"
+            echo "Waiting... ($i)"
             sleep 2
           done
 
-      # ── 9. Run all tests ──────────────────────────
       - name: Run tests
         run: npm test
-
-      # ── 10. Upload test results (optional) ────────
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            coverage/
-          retention-days: 7
+        env:
+          PORT: 5000
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: student_management
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
