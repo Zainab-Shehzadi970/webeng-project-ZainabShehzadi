@@ -115,10 +115,18 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 app.use(errorHandler);
 
 
-// =============================
+/// =============================
 // SERVER
 // =============================
-app.listen(env.PORT, () => {
-  console.log(`🚀 Server running on port ${env.PORT}`);
-});
+
+if (process.env.NODE_ENV !== 'test') {
+
+  app.listen(env.PORT, () => {
+
+    console.log(`🚀 Server running on port ${env.PORT}`);
+
+  });
+
+}
+
 module.exports = app;
