@@ -1,5 +1,8 @@
 exports.errorHandler = (err, req, res, next) => {
-  console.error(err); // debug log
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.error(err); // debug log
+  }
 
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal Server Error ❌';
@@ -8,8 +11,7 @@ exports.errorHandler = (err, req, res, next) => {
   if (err.code === 'ER_DUP_ENTRY') {
     statusCode = 400;
 
-    // Try to extract field name
-    const field = err.sqlMessage.match(/for key '(.+?)'/);
+    const field = err.sqlMessage?.match(/for key '(.+?)'/);
 
     message = field
       ? `${field[1]} already exists ❌`
@@ -28,7 +30,7 @@ exports.errorHandler = (err, req, res, next) => {
     message = 'Missing required field ❌';
   }
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
     message
   });

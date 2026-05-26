@@ -1,32 +1,19 @@
-/**
- * e2e.test.js
- * End-to-End test — Full teacher workflow
- *
- * Flow:
- * 1. Login → get token
- * 2. Create a course
- * 3. Add a student to that course
- * 4. Fetch students → verify student exists
- * 5. Delete the student (cleanup)
- * 6. Delete the course (cleanup)
- */
-
 const request = require('supertest');
-
-const BASE_URL = 'http://localhost:5000';
+const app = require('../backend/server');
 
 describe('E2E — Teacher Full Workflow', () => {
 
-  let token       = '';
-  let courseId    = null;
+  let token = '';
+  let courseId = null;
   let studentDbId = null;
 
-  const testCourseCode = `E2E-${Date.now()}`;   // unique each run
-  const testStudentId  = `STU-E2E-${Date.now()}`;
+  const testCourseCode = `E2E-${Date.now()}`;
+  const testStudentId = `STU-E2E-${Date.now()}`;
 
-  // ── Step 1: Login ──────────────────────────────
+  // Step 1 — Login
   test('Step 1 — Login should return JWT token', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .post('/api/auth/login')
       .send({
         email: 'zainabshehzadi970@gmail.com',
@@ -37,12 +24,15 @@ describe('E2E — Teacher Full Workflow', () => {
     expect(res.body.success).toBe(true);
 
     token = res.body?.data?.token || res.body?.token || '';
+
     expect(token).not.toBe('');
+
   });
 
-  // ── Step 2: Create Course ──────────────────────
+  // Step 2 — Create Course
   test('Step 2 — Create a new course', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .post('/api/courses')
       .set('Authorization', `Bearer ${token}`)
       .send({
@@ -52,23 +42,32 @@ describe('E2E — Teacher Full Workflow', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
+
   });
 
-  // ── Step 3: Get Course ID ──────────────────────
+  // Step 3 — Get Course ID
   test('Step 3 — Fetch courses and find the new course', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .get('/api/courses')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    const course = res.body.data.find(c => c.course_code === testCourseCode);
+
+    const course = res.body.data.find(
+      c => c.course_code === testCourseCode
+    );
+
     expect(course).toBeDefined();
+
     courseId = course.id;
+
   });
 
-  // ── Step 4: Add Student ────────────────────────
+  // Step 4 — Add Student
   test('Step 4 — Add a student to the course', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .post('/api/students')
       .set('Authorization', `Bearer ${token}`)
       .send({
@@ -79,39 +78,52 @@ describe('E2E — Teacher Full Workflow', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
+
   });
 
-  // ── Step 5: Verify Student Exists ─────────────
+  // Step 5 — Verify Student
   test('Step 5 — Fetch students and verify student is present', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .get('/api/students')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    const student = res.body.data.find(s => s.student_id === testStudentId);
+
+    const student = res.body.data.find(
+      s => s.student_id === testStudentId
+    );
+
     expect(student).toBeDefined();
+
     expect(student.name).toBe('E2E Student');
+
     studentDbId = student.id;
+
   });
 
-  // ── Step 6: Cleanup — Delete Student ──────────
+  // Step 6 — Delete Student
   test('Step 6 — Delete the test student (cleanup)', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .delete(`/api/students/${studentDbId}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+
   });
 
-  // ── Step 7: Cleanup — Delete Course ───────────
+  // Step 7 — Delete Course
   test('Step 7 — Delete the test course (cleanup)', async () => {
-    const res = await request(BASE_URL)
+
+    const res = await request(app)
       .delete(`/api/courses/${courseId}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+
   });
 
 });
