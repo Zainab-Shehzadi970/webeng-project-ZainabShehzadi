@@ -1,20 +1,14 @@
-{
+ {
   "name": "final_sms",
   "version": "1.0.0",
-  "description": "Student Management System",
+  "description": "",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "test": "jest --testEnvironment=node --forceExit --detectOpenHandles",
-    "test:unit": "jest tests/auth.test.js tests/students.test.js --forceExit",
-    "test:e2e": "jest tests/e2e.test.js --forceExit"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "testTimeout": 15000
+    "test": "jest --testEnvironment=node"
   },
   "keywords": [],
-  "author": "Zainab Shehzadi",
+  "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
